@@ -1,8 +1,8 @@
 [![Build Status](https://travis-ci.org/pantonov/rbt.svg)](https://travis-ci.org/pantonov/rbt) [![GoDoc](https://godoc.org/github.com/pantonov/rbt?status.svg)](https://godoc.org/github.com/pantonov/rbt)
 
-# RbTree - A Red-Black tree implementation
+# RbMap - Golang red-black tree implementation of ordered map 
 
-RbTree is a sorted associative container that contains key-value pairs with unique keys. Keys are sorted by using the comparison function. Search, removal, and insertion operations have logarithmic complexity.
+RbMap is a sorted associative container that contains key-value pairs with unique keys. Keys are sorted by using the comparison function. Search, removal, and insertion operations have logarithmic complexity.
 
 Documentation: [Godoc](http://godoc.org/github.com/pantonov/rbt)
 
@@ -17,7 +17,7 @@ Documentation: [Godoc](http://godoc.org/github.com/pantonov/rbt)
 
 ```go
 
-    r := rbt.NewRbTree(func(k1, k2 interface{}) bool {
+    r := rbt.NewRbMap(func(k1, k2 interface{}) bool {
         return k1.(string) < k2.(string)
     })
     r.Insert("c", 1)

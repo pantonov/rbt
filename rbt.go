@@ -1,19 +1,19 @@
 // Red-Black tree implementation. Each tree node (entry) contains Key and Value.
-// Entries in the RbTree are always ordered according to the key value, so
+// Entries in the RbMap are always ordered according to the key value, so
 // it can be used as ordered set (std::set in C++) or ordered map (std::map).
 // Note: all methods are not goroutine-safe.
 package rbt
 
-type RbTree struct {
+type RbMap struct {
     less       LessFunc
-    root       *RbTreeNode
+    root       *RbMapNode
     size       int
 }
 
 // Red-black tree node, contains key and value. It is safe to overwrite Value
 // in-place.
-type RbTreeNode struct {
-    left, right, parent *RbTreeNode
+type RbMapNode struct {
+    left, right, parent *RbMapNode
     // key
     key          interface{}
     Value        interface{}
@@ -24,14 +24,14 @@ type RbTreeNode struct {
 // Must return true if k1 < k2, false otherwise
 type LessFunc func(k1, k2 interface{}) bool
 
-// Create new RbTree with provided comparsion function. The latter must
+// Create new RbMap with provided comparsion function. The latter must
 // return true if k1 < k2, false otherwise.
-func NewRbTree(lessFunc LessFunc) *RbTree {
-    return &RbTree{ less: lessFunc }
+func NewRbMap(lessFunc LessFunc) *RbMap {
+    return &RbMap{ less: lessFunc }
 }
 
 // Find node by key and return its Value, returns nil if key not found.
-func (t *RbTree) Find(key interface{}) interface{} {
+func (t *RbMap) Find(key interface{}) interface{} {
     n := t.FindNode(key)
     if n != nil {
         return n.Value
@@ -40,7 +40,7 @@ func (t *RbTree) Find(key interface{}) interface{} {
 }
 
 // Find a node by key, returns nil if not found
-func (t *RbTree) FindNode(key interface{}) *RbTreeNode {
+func (t *RbMap) FindNode(key interface{}) *RbMapNode {
     x := t.root
     for x != nil {
         if t.less(x.key, key) {
@@ -57,7 +57,7 @@ func (t *RbTree) FindNode(key interface{}) *RbTreeNode {
 }
 
 // Get last node in the tree (with highest key value).
-func (t *RbTree) Last() *RbTreeNode {
+func (t *RbMap) Last() *RbMapNode {
     if nil == t.root {
         return nil
     }
@@ -65,7 +65,7 @@ func (t *RbTree) Last() *RbTreeNode {
 }
 
 // Get first node in the tree (with lowest key value).
-func (t *RbTree) First() *RbTreeNode {
+func (t *RbMap) First() *RbMapNode {
     if nil == t.root {
         return nil
     }
@@ -73,7 +73,7 @@ func (t *RbTree) First() *RbTreeNode {
 }
 
 // Returns previous node in the tree, in descending key value order.
-func (x *RbTreeNode) Prev() *RbTreeNode {
+func (x *RbMapNode) Prev() *RbMapNode {
     if x.right != nil {
         return x.right.min()
     }
@@ -86,12 +86,12 @@ func (x *RbTreeNode) Prev() *RbTreeNode {
 }
 
 // Returns key associated with tree node.
-func (x *RbTreeNode) Key() interface{} {
+func (x *RbMapNode) Key() interface{} {
     return x.key
 }
 
 // Returns next node in the tree, in ascending key value order.
-func (x *RbTreeNode) Next() *RbTreeNode {
+func (x *RbMapNode) Next() *RbMapNode {
     if x.left != nil {
         return x.left.max()
     }
@@ -105,21 +105,21 @@ func (x *RbTreeNode) Next() *RbTreeNode {
 
 // Returns number of entries in the tree. This function returns internal
 // counter, therefore it is fast and safe to use in loops.
-func (t *RbTree) Size() int {
+func (t *RbMap) Size() int {
     return t.size
 }
 
 // Remove all entries in the tree.
-func (t *RbTree) Clear() {
+func (t *RbMap) Clear() {
     t.root = nil
     t.size = 0
 }
 
 // Insert key and value into the tree. If new entry is created, returns true.
 // If key already exists, value gets replaced and Insert returns false.
-func (t *RbTree) Insert(key interface{}, value interface{}) bool {
+func (t *RbMap) Insert(key interface{}, value interface{}) bool {
     x := t.root
-    var y *RbTreeNode
+    var y *RbMapNode
 
     for x != nil {
         y = x
@@ -132,7 +132,7 @@ func (t *RbTree) Insert(key interface{}, value interface{}) bool {
             return false // overwrite value
         }
     }
-    z := &RbTreeNode{parent: y, isred: true, key: key, Value: value}
+    z := &RbMapNode{parent: y, isred: true, key: key, Value: value}
     if y == nil {
         t.root = z
     } else {
@@ -148,15 +148,15 @@ func (t *RbTree) Insert(key interface{}, value interface{}) bool {
 }
 
 // Delete tree node by key.
-func (t *RbTree) Delete(key interface{}) {
+func (t *RbMap) Delete(key interface{}) {
     if z := t.FindNode(key); z != nil {
         t.DeleteNode(z)
     }
 }
 
 // Delete tree node.
-func (t *RbTree) DeleteNode(z *RbTreeNode) {
-    var x, y, parent *RbTreeNode
+func (t *RbMap) DeleteNode(z *RbMapNode) {
+    var x, y, parent *RbMapNode
     y, y_original_isred, parent := z, z.isred, z.parent
     if z.left == nil {
         x = z.right
@@ -188,8 +188,8 @@ func (t *RbTree) DeleteNode(z *RbTreeNode) {
     t.size--
 }
 
-func (t *RbTree) rb_insert_fixup(x *RbTreeNode) {
-    var y *RbTreeNode
+func (t *RbMap) rb_insert_fixup(x *RbMapNode) {
+    var y *RbMapNode
     for isRed(x.parent) {
         if x.parent == x.parent.parent.left {
             y = x.parent.parent.right
@@ -224,8 +224,8 @@ func (t *RbTree) rb_insert_fixup(x *RbTreeNode) {
     t.root.isred = false
 }
 
-func (t *RbTree) rb_delete_fixup(x, parent *RbTreeNode) {
-    var w *RbTreeNode
+func (t *RbMap) rb_delete_fixup(x, parent *RbMapNode) {
+    var w *RbMapNode
     for x != t.root && isBlack(x) {
         if x == parent.left {
             w = parent.right
@@ -294,21 +294,21 @@ func (t *RbTree) rb_delete_fixup(x, parent *RbTreeNode) {
     }
 }
 
-func (n *RbTreeNode) min() *RbTreeNode {
+func (n *RbMapNode) min() *RbMapNode {
     for n.left != nil {
         n = n.left
     }
     return n
 }
 
-func (n *RbTreeNode) max() *RbTreeNode {
+func (n *RbMapNode) max() *RbMapNode {
     for n.right != nil {
         n = n.right
     }
     return n
 }
 
-func (t *RbTree) left_rotate(x *RbTreeNode) {
+func (t *RbMap) left_rotate(x *RbMapNode) {
     y := x.right
     x.right = y.left
     if y.left != nil {
@@ -327,7 +327,7 @@ func (t *RbTree) left_rotate(x *RbTreeNode) {
     y.left, x.parent = x, y
 }
 
-func (t *RbTree) right_rotate(y *RbTreeNode) {
+func (t *RbMap) right_rotate(y *RbMapNode) {
     x := y.left
     y.left = x.right
     if x.right != nil {
@@ -346,7 +346,7 @@ func (t *RbTree) right_rotate(y *RbTreeNode) {
     x.right, y.parent = y, x
 }
 
-func (t *RbTree) rbtransplant(u, v *RbTreeNode) {
+func (t *RbMap) rbtransplant(u, v *RbMapNode) {
     if u.parent == nil {
         t.root = v
     } else if u == u.parent.left {
@@ -360,17 +360,17 @@ func (t *RbTree) rbtransplant(u, v *RbTreeNode) {
     v.parent = u.parent
 }
 
-func isBlack(n *RbTreeNode) bool {
+func isBlack(n *RbMapNode) bool {
     return nil == n || !n.isred
 }
 
-func isRed(n *RbTreeNode) bool {
+func isRed(n *RbMapNode) bool {
     return nil != n && n.isred
 }
 
 /*
 // uncomment for debugging only
-func (n *RbTreeNode) Dump(indent int, tag string) {
+func (n *RbMapNode) Dump(indent int, tag string) {
     idn := strings.Repeat(" ", indent*4)
     fmt.Printf("%s%s[%v:%v]%d\n", idn, tag, n.Key, n.Value, n.isred)
     if n.left != nil {
@@ -381,7 +381,7 @@ func (n *RbTreeNode) Dump(indent int, tag string) {
     }
 }
 
-func (t *RbTree) Dump() {
+func (t *RbMap) Dump() {
     if t.root == nil {
         fmt.Printf("<NULL TREE>\n")
     } else {

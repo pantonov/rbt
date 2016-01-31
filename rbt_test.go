@@ -7,10 +7,10 @@ import (
 )
 
 // fill rbtree with random numbers as keys
-func newtree(t *testing.T, iters int) *RbTree {
+func newtree(t *testing.T, iters int) *RbMap {
     rand.Seed(time.Now().UnixNano())
     // rb tree with integer keys
-    r := NewRbTree(func(k1, k2 interface{}) bool { 
+    r := NewRbMap(func(k1, k2 interface{}) bool { 
         return k1.(int) < (k2).(int)
     })
     if r == nil { t.FailNow() }
