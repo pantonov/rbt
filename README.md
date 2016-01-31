@@ -4,7 +4,7 @@
 
 RbTree is a sorted associative container that contains key-value pairs with unique keys. Keys are sorted by using the comparison function. Search, removal, and insertion operations have logarithmic complexity.
 
-Documentation: [Godoc](http://godoc.org/github.com/hashicorp/golang-lru)
+Documentation: [Godoc](http://godoc.org/github.com/pantonov/rbt)
 
 ## Installation
 
