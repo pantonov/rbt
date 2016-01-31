@@ -6,14 +6,14 @@ RbTree is a sorted associative container that contains key-value pairs with uniq
 
 Documentation: [Godoc](http://godoc.org/github.com/pantonov/rbt)
 
-## Installation
- stable:
-    go get gopkg.in/pantonov/rbt.v1
+# Installation
+* Stable:  
+    **go get gopkg.in/pantonov/rbt.v1**
 
- latest:
-    go get github.com/pantonov/rbt
+* Latest:  
+    **go get github.com/pantonov/rbt**
 
-### Example
+# Example
 
 ```go
 
