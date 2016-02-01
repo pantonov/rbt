@@ -4,6 +4,8 @@
 // Note: all methods are not goroutine-safe.
 package rbt
 
+// import ( "strings" ; "fmt" )
+
 type RbMap struct {
     less       LessFunc
     root       *RbMapNode
@@ -44,10 +46,10 @@ func (t *RbMap) FindNode(key interface{}) *RbMapNode {
     x := t.root
     for x != nil {
         if t.less(x.key, key) {
-            x = x.left
+            x = x.right
         } else {
             if t.less(key, x.key) {
-                x = x.right
+                x = x.left
             } else {
                 return x
             }
@@ -61,7 +63,7 @@ func (t *RbMap) Last() *RbMapNode {
     if nil == t.root {
         return nil
     }
-    return t.root.min()
+    return t.root.max()
 }
 
 // Get first node in the tree (with lowest key value).
@@ -69,11 +71,11 @@ func (t *RbMap) First() *RbMapNode {
     if nil == t.root {
         return nil
     }
-    return t.root.max()
+    return t.root.min()
 }
 
 // Returns previous node in the tree, in descending key value order.
-func (x *RbMapNode) Prev() *RbMapNode {
+func (x *RbMapNode) Next() *RbMapNode {
     if x.right != nil {
         return x.right.min()
     }
@@ -91,7 +93,7 @@ func (x *RbMapNode) Key() interface{} {
 }
 
 // Returns next node in the tree, in ascending key value order.
-func (x *RbMapNode) Next() *RbMapNode {
+func (x *RbMapNode) Prev() *RbMapNode {
     if x.left != nil {
         return x.left.max()
     }
@@ -124,9 +126,9 @@ func (t *RbMap) Insert(key interface{}, value interface{}) bool {
     for x != nil {
         y = x
         if t.less(x.key, key) {
-            x = x.left
-        } else if t.less(key, x.key) {
             x = x.right
+        } else if t.less(key, x.key) {
+            x = x.left
         } else {
             x.Value = value
             return false // overwrite value
@@ -136,7 +138,7 @@ func (t *RbMap) Insert(key interface{}, value interface{}) bool {
     if y == nil {
         t.root = z
     } else {
-        if t.less(y.key, key) {
+        if t.less(key, y.key) {
             y.left = z
         } else {
             y.right = z
@@ -147,45 +149,90 @@ func (t *RbMap) Insert(key interface{}, value interface{}) bool {
     return true
 }
 
-// Delete tree node by key.
-func (t *RbMap) Delete(key interface{}) {
+// Delete tree node by key. Returns true if key was found and deleted.
+func (t *RbMap) Delete(key interface{}) bool {
     if z := t.FindNode(key); z != nil {
         t.DeleteNode(z)
+        return true
     }
+    return false
 }
 
 // Delete tree node.
-func (t *RbMap) DeleteNode(z *RbMapNode) {
-    var x, y, parent *RbMapNode
-    y, y_original_isred, parent := z, z.isred, z.parent
-    if z.left == nil {
-        x = z.right
-        t.rbtransplant(z, z.right)
-    } else if z.right == nil {
-        x = z.left
-        t.rbtransplant(z, z.left)
-    } else {
-        y = z.right.min()
-        y_original_isred, x = y.isred, y.right
-        if y.parent == z {
-            if x == nil {
-                parent = y
-            } else {
-                x.parent = y
-            }
-        } else {
-            t.rbtransplant(y, y.right)
-            y.right = z.right
-            y.right.parent = y
-        }
-        t.rbtransplant(z, y)
-        y.left = z.left
-        y.left.parent, y.isred = y, z.isred
+func (t *RbMap) DeleteNode(n *RbMapNode) {
+    var x *RbMapNode
+    if nil != n.left && nil != n.right {
+        x = n.left.max()
+        n.key, n.Value = x.key, x.Value
+        n = x
     }
-    if !y_original_isred && x != nil {
-        t.rb_delete_fixup(x, parent)
+    if nil == n.right {
+        x = n.left
+    } else {
+        x = n.right
+    }
+    if isBlack(n) {
+        n.isred = isRed(x)
+        if nil != n.parent {
+            t.rb_delete_fixup(n)
+        }
+    }
+    t.rbreplace(n, x)
+    if isRed(t.root) {
+        t.root.isred = false
     }
     t.size--
+}
+
+func (t* RbMap) rb_delete_fixup(n *RbMapNode) {
+    var s, p *RbMapNode
+    for {
+        s, p = n.sibling(), n.parent
+        if isRed(s) {
+            p.isred, s.isred = true, false
+            if n == p.left {
+                t.left_rotate(p)
+                s = p.right
+            } else {
+                t.right_rotate(p)
+                s = p.left
+            }
+        }
+        if isBlack(p) && isBlack(s) && isBlack(s.left) && isBlack(s.right) {
+            s.isred = true
+            if nil != p.parent {
+                n = p
+                continue
+            }
+            return
+        } else {
+            break
+        }
+    }
+    if isRed(n.parent) && isBlack(s) && isBlack(s.left) && isBlack(s.right) {
+        s.isred, n.parent.isred = true, false
+    } else {
+        if isBlack(s) {
+            if n == n.parent.left && isRed(s.left) && isBlack(s.right) {
+                s.isred, s.left.isred = true, false
+                t.right_rotate(s)
+                s = n.parent.right
+            } else if n == n.parent.right && isRed(s.right) && isBlack(s.left) {
+                s.isred, s.right.isred = true, false
+                t.left_rotate(s)
+                s = n.parent.left
+            }
+        }
+        s.isred = n.parent.isred
+        n.parent.isred = false
+        if n == n.parent.left {
+            s.right.isred = false
+            t.left_rotate(n.parent)
+        } else {
+            s.left.isred = false
+            t.right_rotate(n.parent)
+        }
+    }
 }
 
 func (t *RbMap) rb_insert_fixup(x *RbMapNode) {
@@ -224,73 +271,11 @@ func (t *RbMap) rb_insert_fixup(x *RbMapNode) {
     t.root.isred = false
 }
 
-func (t *RbMap) rb_delete_fixup(x, parent *RbMapNode) {
-    var w *RbMapNode
-    for x != t.root && isBlack(x) {
-        if x == parent.left {
-            w = parent.right
-            if isRed(w) {
-                w.isred, parent.isred = false, true
-                t.left_rotate(parent)
-                w = parent.right
-            }
-            if w != nil && isBlack(w.left) && isBlack(w.right) {
-                w.isred = true 
-                x = parent
-                parent = x.parent
-            } else {
-                if w != nil && isBlack(w.right) {
-                    if w.left != nil {
-                        w.left.isred = false
-                    }
-                    w.isred = true
-                    t.right_rotate(w)
-                    w = parent.right
-                }
-                if w != nil {
-                    w.isred = parent.isred
-                    if w.right != nil {
-                        w.right.isred = false
-                    }
-                }
-                parent.isred = false
-                t.left_rotate(parent)
-                x = t.root
-            }
-        } else {
-            w := parent.left
-            if isRed(w) {
-                w.isred, parent.isred = false, true
-                t.right_rotate(parent)
-                w = parent.left
-            }
-            if w != nil && isBlack(w.left) && isBlack(w.right) {
-                w.isred = true
-                x = parent
-                parent = x.parent
-            } else {
-                if w != nil && isBlack(w.left) {
-                    w.isred = true
-                    if w.right != nil {
-                        w.right.isred = false
-                    }
-                    t.left_rotate(w)
-                    w = parent.left
-                }
-                if w != nil {
-                    w.isred = parent.isred
-                    if w.left != nil {
-                        w.left.isred = false
-                    }
-                }
-                parent.isred = false
-                t.right_rotate(parent)
-                x = t.root
-            }
-        }
-    }
-    if x != nil {
-        x.isred = false
+func (n *RbMapNode) sibling() *RbMapNode {
+    if n == n.parent.left {
+        return n.parent.right
+    } else {
+        return n.parent.left
     }
 }
 
@@ -308,56 +293,38 @@ func (n *RbMapNode) max() *RbMapNode {
     return n
 }
 
-func (t *RbMap) left_rotate(x *RbMapNode) {
-    y := x.right
-    x.right = y.left
-    if y.left != nil {
-        y.left.parent = x
-    }
-    y.parent = x.parent
-    if x.parent == nil {
-        t.root = y
-    } else {
-        if x == x.parent.left {
-          x.parent.left = y
-       } else {
-          x.parent.right = y
-       }
-    }
-    y.left, x.parent = x, y
+func (t *RbMap) left_rotate(n *RbMapNode) {
+    r := n.right
+    t.rbreplace(n, r)
+    n.right = r.left
+    if nil != r.left {
+        r.left.parent = n
+    } 
+    r.left, n.parent = n, r
 }
 
-func (t *RbMap) right_rotate(y *RbMapNode) {
-    x := y.left
-    y.left = x.right
-    if x.right != nil {
-        x.right.parent = y
+func (t *RbMap) right_rotate(n *RbMapNode) {
+    l := n.left
+    t.rbreplace(n, l)
+    n.left = l.right
+    if nil != l.right {
+        l.right.parent = n
     }
-    x.parent = y.parent
-    if y.parent == nil {
-        t.root = x
-    } else { 
-        if y == y.parent.left {
-          y.parent.left = x
-       } else {
-          y.parent.right = x
-       }
-    }
-    x.right, y.parent = y, x
+    l.right, n.parent = n, l
 }
 
-func (t *RbMap) rbtransplant(u, v *RbMapNode) {
-    if u.parent == nil {
+func (t *RbMap) rbreplace(u, v *RbMapNode) {
+    parent := u.parent
+    if parent == nil {
         t.root = v
-    } else if u == u.parent.left {
-        u.parent.left = v
+    } else if u == parent.left {
+        parent.left = v
     } else {
-        u.parent.right = v
+        parent.right = v
     }
-    if v == nil {
-        return
+    if v != nil {
+        v.parent = parent
     }
-    v.parent = u.parent
 }
 
 func isBlack(n *RbMapNode) bool {
@@ -369,10 +336,14 @@ func isRed(n *RbMapNode) bool {
 }
 
 /*
-// uncomment for debugging only
+
+// uncomment for debugging only, because this adds dependency on strings, fmt
+
 func (n *RbMapNode) Dump(indent int, tag string) {
     idn := strings.Repeat(" ", indent*4)
-    fmt.Printf("%s%s[%v:%v]%d\n", idn, tag, n.Key, n.Value, n.isred)
+    c := 'B'
+    if n.isred { c = 'R' }
+    fmt.Printf("%s%s[%v:%v]%c\n", idn, tag, n.Key(), n.Value, c)
     if n.left != nil {
         n.left.Dump(indent + 1, "L:")
     }
@@ -389,3 +360,46 @@ func (t *RbMap) Dump() {
     }
 }
 */
+
+// Internal tree consistency check used by tests. 
+func (t *RbMap) Verify() {
+    if nil == t.root { return }
+    if isRed(t.root) { panic("root is red") }
+    verify1(t.root)
+    verify2(t.root)
+}
+
+func verify1(n *RbMapNode) {
+    if isRed(n) {
+        if !isBlack(n.left)   { panic("left is not black") }
+        if !isBlack(n.right)  { panic("right is not black") }
+        if !isBlack(n.parent) { panic("parent is not black") }
+    } 
+    if nil == n { return }
+    verify1(n.left)
+    verify1(n.right)
+}
+
+func verify2(n *RbMapNode) {
+    black_count_path := -1
+    verify2h(n, 0, &black_count_path)
+}
+
+func verify2h(n *RbMapNode, black_count int, path_black_count *int) {
+    if isBlack(n) {
+        black_count++
+    }
+    if n == nil {
+        if *path_black_count == -1 {
+            *path_black_count = black_count;
+        } else {
+            if black_count != *path_black_count {
+                panic("black count")
+            }
+        }
+        return
+    }
+    verify2h(n.left,  black_count, path_black_count)
+    verify2h(n.right, black_count, path_black_count)
+}
+

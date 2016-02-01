@@ -38,5 +38,6 @@ Documentation: [Godoc](http://godoc.org/github.com/pantonov/rbt)
     n := r.FindNode("a")
     fmt.Printf("Key next to 'a': %s\n", n.Next().Key())
     r.DeleteNode(n.Next())
+    n = r.FindNode("a")
     fmt.Printf("Now, key for node next to 'a': %s\n", n.Next().Key())
 ```
