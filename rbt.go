@@ -23,11 +23,10 @@ type RbMapNode struct {
 }
 
 // LessFunc is a key comparsion function. 
-// Must return true if k1 < k2, false otherwise
+// Must return true if k1 < k2, false otherwise.
 type LessFunc func(k1, k2 interface{}) bool
 
-// Create new RbMap with provided comparsion function. The latter must
-// return true if k1 < k2, false otherwise.
+// Create new RbMap with provided key comparsion function. 
 func NewRbMap(lessFunc LessFunc) *RbMap {
     return &RbMap{ less: lessFunc }
 }
@@ -41,7 +40,7 @@ func (t *RbMap) Find(key interface{}) interface{} {
     return nil
 }
 
-// Find a node by key, returns nil if not found
+// Find a node by key, returns nil if not found.
 func (t *RbMap) FindNode(key interface{}) *RbMapNode {
     x := t.root
     for x != nil {
@@ -74,7 +73,7 @@ func (t *RbMap) First() *RbMapNode {
     return t.root.min()
 }
 
-// Returns previous node in the tree, in descending key value order.
+// Get next node, in ascending key value order.
 func (x *RbMapNode) Next() *RbMapNode {
     if x.right != nil {
         return x.right.min()
@@ -92,7 +91,7 @@ func (x *RbMapNode) Key() interface{} {
     return x.key
 }
 
-// Returns next node in the tree, in ascending key value order.
+// Get previous node, in descending key value order.
 func (x *RbMapNode) Prev() *RbMapNode {
     if x.left != nil {
         return x.left.max()
