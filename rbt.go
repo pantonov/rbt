@@ -362,7 +362,7 @@ func (t *RbMap) Dump() {
 */
 
 // Internal tree consistency check used by tests. 
-func (t *RbMap) Verify() {
+func (t *RbMap) verify() {
     if nil == t.root { return }
     if isRed(t.root) { panic("root is red") }
     verify1(t.root)

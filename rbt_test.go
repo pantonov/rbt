@@ -27,7 +27,7 @@ func newtree(t *testing.T, iters int) *RbMap {
     if r.Size() != realsize {
          t.Fatalf("Realsize mismatch: %d/%d", r.Size(), realsize);
     }
-    r.Verify()
+    r.verify()
     return r
 }
 
@@ -73,20 +73,18 @@ func TestFind(t *testing.T) {
 
 func TestDelete(t *testing.T) {
     r := newtree(t, 100000)
-    r.Verify()
     i := 0
     for n := r.First(); nil != n; n = r.First() {
         r.DeleteNode(n)
         if i == 10000 || i == 70000 { 
-            r.Verify()
+            r.verify()
         }
         i++
     }
-    return
-    if r.Size() != 0 { t.Fail(); }
+    if r.Size() != 0 { t.Fatalf("tree size non-null after delete") }
     r = newtree(t, 100000)
     for n := r.Last(); nil != n; n = r.Last() {
         r.DeleteNode(n)
     }
-    if r.Size() != 0 { t.FailNow(); }
+    if r.Size() != 0 { t.Fatalf("tree size non-null after delete") }
 }
